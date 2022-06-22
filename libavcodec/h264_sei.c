@@ -58,6 +58,8 @@ void ff_h264_sei_uninit(H264SEIContext *h)
     h->film_grain_characteristics.present = 0;
     h->display_orientation.present = 0;
     h->afd.present                 =  0;
+	h->mastering_display.present   = 0;
+	h->content_light.present       = 0;
 
     av_buffer_unref(&h->a53_caption.buf_ref);
     for (int i = 0; i < h->unregistered.nb_buf_ref; i++)
@@ -459,6 +461,51 @@ static int decode_film_grain_characteristics(H264SEIFilmGrainCharacteristics *h,
 
     return 0;
 }
+static int decode_nal_sei_mastering_display_info(H264SEIMasteringDisplay *h,
+                                                 GetBitContext *gb)
+{
+    int i;
+
+    if (get_bits_left(gb) < 192)
+        return AVERROR_INVALIDDATA;
+
+    // Mastering primaries
+    for (i = 0; i < 3; i++) {
+        h->display_primaries[i][0] = get_bits(gb,16);
+        h->display_primaries[i][1] = get_bits(gb,16);
+    }
+    // White point (x, y)
+    h->white_point[0] = get_bits(gb,16);
+    h->white_point[1] = get_bits(gb,16);
+
+    // Max and min luminance of mastering display
+    h->max_luminance = get_bits(gb,32);
+    h->min_luminance = get_bits(gb,32);
+
+    // As this SEI message comes before the first frame that references it,
+    // initialize the flag to 2 and decrement on IRAP access unit so it
+    // persists for the coded video sequence (e.g., between two IRAPs)
+    h->present = 2;
+
+    return 0;
+}
+
+static int decode_nal_sei_content_light_info(H264SEIContentLight *h,
+                                             GetBitContext *gb)
+{
+    if (get_bits_left(gb) < 32)
+        return AVERROR_INVALIDDATA;
+
+    // Max and average light levels
+    h->max_content_light_level     = get_bits(gb,16);
+    h->max_pic_average_light_level = get_bits(gb,16);
+    // As this SEI message comes before the first frame that references it,
+    // initialize the flag to 2 and decrement on IRAP access unit so it
+    // persists for the coded video sequence (e.g., between two IRAPs)
+    h->present = 2;
+
+    return  0;
+}
 
 int ff_h264_sei_decode(H264SEIContext *h, GetBitContext *gb,
                        const H264ParamSets *ps, void *logctx)
@@ -524,6 +571,12 @@ int ff_h264_sei_decode(H264SEIContext *h, GetBitContext *gb,
         case SEI_TYPE_FILM_GRAIN_CHARACTERISTICS:
             ret = decode_film_grain_characteristics(&h->film_grain_characteristics, &gb_payload);
             break;
+		case SEI_TYPE_MASTERING_DISPLAY_COLOUR_VOLUME:
+			ret=decode_nal_sei_mastering_display_info(&h->mastering_display, &gb_payload);
+            break;
+	    case SEI_TYPE_CONTENT_LIGHT_LEVEL_INFO:
+			ret=decode_nal_sei_content_light_info(&h->content_light, &gb_payload);
+			break;
         default:
             av_log(logctx, AV_LOG_DEBUG, "unknown SEI type %d\n", type);
         }

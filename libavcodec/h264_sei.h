@@ -186,6 +186,20 @@ typedef struct H264SEIFilmGrainCharacteristics {
     int repetition_period;
 } H264SEIFilmGrainCharacteristics;
 
+typedef struct H264SEIMasteringDisplay {
+    int present;
+    uint16_t display_primaries[3][2];
+    uint16_t white_point[2];
+    uint32_t max_luminance;
+    uint32_t min_luminance;
+} H264SEIMasteringDisplay;
+
+typedef struct H264SEIContentLight {
+    int present;
+    uint16_t max_content_light_level;
+    uint16_t max_pic_average_light_level;
+} H264SEIContentLight;
+
 typedef struct H264SEIContext {
     H264SEIPictureTiming picture_timing;
     H264SEIAFD afd;
@@ -198,6 +212,9 @@ typedef struct H264SEIContext {
     H264SEIGreenMetaData green_metadata;
     H264SEIAlternativeTransfer alternative_transfer;
     H264SEIFilmGrainCharacteristics film_grain_characteristics;
+	H264SEIMasteringDisplay mastering_display;
+	H264SEIContentLight content_light;
+	
 } H264SEIContext;
 
 struct H264ParamSets;

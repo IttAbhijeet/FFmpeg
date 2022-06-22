@@ -30,6 +30,7 @@
 #include "libavutil/avassert.h"
 #include "libavutil/display.h"
 #include "libavutil/film_grain_params.h"
+#include "libavutil/mastering_display_metadata.h"
 #include "libavutil/pixdesc.h"
 #include "libavutil/stereo3d.h"
 #include "libavutil/timecode.h"
@@ -1429,6 +1430,78 @@ static int h264_export_frame_props(H264Context *h)
             av_dict_set(&out->metadata, "timecode", tcbuf, 0);
         }
         h->sei.picture_timing.timecode_cnt = 0;
+    }
+	
+	   // Decrement the mastering display flag when IRAP frame has no_rasl_output_flag=1
+    // so the side data persists for the entire coded video sequence.
+   /* if (h->sei.mastering_display.present > 0 &&
+        IS_IRAP(h) && h->no_rasl_output_flag) {
+        h->sei.mastering_display.present--;
+    }*/
+    if (h->sei.mastering_display.present) {
+        // H264 uses a g,b,r ordering, which we convert to a more natural r,g,b
+        const int mapping[3] = {2, 0, 1};
+        
+        const int chroma_den = 50000;
+        const int luma_den = 10000;
+        int i;
+        AVMasteringDisplayMetadata *metadata =
+            av_mastering_display_metadata_create_side_data(out);
+        if (!metadata)
+            return AVERROR(ENOMEM);
+		
+
+        for (i = 0; i < 3; i++) {
+            const int j = mapping[i];
+            metadata->display_primaries[i][0].num = h->sei.mastering_display.display_primaries[j][0];
+            metadata->display_primaries[i][0].den = chroma_den;
+            metadata->display_primaries[i][1].num = h->sei.mastering_display.display_primaries[j][1];
+            metadata->display_primaries[i][1].den = chroma_den;
+        }
+        metadata->white_point[0].num = h->sei.mastering_display.white_point[0];
+        metadata->white_point[0].den = chroma_den;
+        metadata->white_point[1].num = h->sei.mastering_display.white_point[1];
+        metadata->white_point[1].den = chroma_den;
+
+        metadata->max_luminance.num = h->sei.mastering_display.max_luminance;
+        metadata->max_luminance.den = luma_den;
+        metadata->min_luminance.num = h->sei.mastering_display.min_luminance;
+        metadata->min_luminance.den = luma_den;
+        metadata->has_luminance = 1;
+        metadata->has_primaries = 1;
+
+        av_log(h->avctx, AV_LOG_DEBUG, "Mastering Display Metadata:\n");
+        av_log(h->avctx, AV_LOG_DEBUG,
+               "r(%5.4f,%5.4f) g(%5.4f,%5.4f) b(%5.4f %5.4f) wp(%5.4f, %5.4f)\n",
+               av_q2d(metadata->display_primaries[0][0]),
+               av_q2d(metadata->display_primaries[0][1]),
+               av_q2d(metadata->display_primaries[1][0]),
+               av_q2d(metadata->display_primaries[1][1]),
+               av_q2d(metadata->display_primaries[2][0]),
+               av_q2d(metadata->display_primaries[2][1]),
+               av_q2d(metadata->white_point[0]), av_q2d(metadata->white_point[1]));
+        av_log(h->avctx, AV_LOG_DEBUG,
+               "min_luminance=%f, max_luminance=%f\n",
+               av_q2d(metadata->min_luminance), av_q2d(metadata->max_luminance));
+    }
+	
+    // Decrement the mastering display flag when IRAP frame has no_rasl_output_flag=1
+    // so the side data persists for the entire coded video sequence.
+   /* if (h->sei.content_light.present > 0 &&
+        IS_IRAP(h) && h->no_rasl_output_flag) {
+        h->sei.content_light.present--;
+    }*/
+    if (h->sei.content_light.present) {
+        AVContentLightMetadata *metadata =
+            av_content_light_metadata_create_side_data(out);
+        if (!metadata)
+            return AVERROR(ENOMEM);
+        metadata->MaxCLL  = h->sei.content_light.max_content_light_level;
+        metadata->MaxFALL = h->sei.content_light.max_pic_average_light_level;
+
+        av_log(h->avctx, AV_LOG_DEBUG, "Content Light Level Metadata:\n");
+        av_log(h->avctx, AV_LOG_DEBUG, "MaxCLL=%d, MaxFALL=%d\n",
+               metadata->MaxCLL, metadata->MaxFALL);
     }
 
     return 0;
