@@ -457,6 +457,9 @@ int ff_h264_update_thread_context(AVCodecContext *dst,
         }
     }
     h->sei.unregistered.x264_build = h1->sei.unregistered.x264_build;
+	
+	h->sei.mastering_display       = h1->sei.mastering_display;
+    h->sei.content_light           = h1->sei.content_light;
 
     if (!h->cur_pic_ptr)
         return 0;
@@ -1432,12 +1435,7 @@ static int h264_export_frame_props(H264Context *h)
         h->sei.picture_timing.timecode_cnt = 0;
     }
 	
-	   // Decrement the mastering display flag when IRAP frame has no_rasl_output_flag=1
-    // so the side data persists for the entire coded video sequence.
-   /* if (h->sei.mastering_display.present > 0 &&
-        IS_IRAP(h) && h->no_rasl_output_flag) {
-        h->sei.mastering_display.present--;
-    }*/
+	
     if (h->sei.mastering_display.present) {
         // H264 uses a g,b,r ordering, which we convert to a more natural r,g,b
         const int mapping[3] = {2, 0, 1};
@@ -1485,12 +1483,7 @@ static int h264_export_frame_props(H264Context *h)
                av_q2d(metadata->min_luminance), av_q2d(metadata->max_luminance));
     }
 	
-    // Decrement the mastering display flag when IRAP frame has no_rasl_output_flag=1
-    // so the side data persists for the entire coded video sequence.
-   /* if (h->sei.content_light.present > 0 &&
-        IS_IRAP(h) && h->no_rasl_output_flag) {
-        h->sei.content_light.present--;
-    }*/
+    
     if (h->sei.content_light.present) {
         AVContentLightMetadata *metadata =
             av_content_light_metadata_create_side_data(out);

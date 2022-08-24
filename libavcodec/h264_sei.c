@@ -58,8 +58,13 @@ void ff_h264_sei_uninit(H264SEIContext *h)
     h->film_grain_characteristics.present = 0;
     h->display_orientation.present = 0;
     h->afd.present                 =  0;
-	h->mastering_display.present   = 0;
+	
+	//If mastering_display and content_light is already present in previous frames,don't unintialize them.
+	if(h->mastering_display.present!= 2){
+	h->mastering_display.present   = 0;}
+	if(h->content_light.present!= 2){
 	h->content_light.present       = 0;
+	}
 
     av_buffer_unref(&h->a53_caption.buf_ref);
     for (int i = 0; i < h->unregistered.nb_buf_ref; i++)
@@ -483,8 +488,7 @@ static int decode_nal_sei_mastering_display_info(H264SEIMasteringDisplay *h,
     h->min_luminance = get_bits(gb,32);
 
     // As this SEI message comes before the first frame that references it,
-    // initialize the flag to 2 and decrement on IRAP access unit so it
-    // persists for the coded video sequence (e.g., between two IRAPs)
+    // initialize the flag to 2
     h->present = 2;
 
     return 0;
@@ -500,8 +504,7 @@ static int decode_nal_sei_content_light_info(H264SEIContentLight *h,
     h->max_content_light_level     = get_bits(gb,16);
     h->max_pic_average_light_level = get_bits(gb,16);
     // As this SEI message comes before the first frame that references it,
-    // initialize the flag to 2 and decrement on IRAP access unit so it
-    // persists for the coded video sequence (e.g., between two IRAPs)
+    // initialize the flag to 2 
     h->present = 2;
 
     return  0;
