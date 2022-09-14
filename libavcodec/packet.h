@@ -298,6 +298,9 @@ enum AVPacketSideDataType {
      * SMPTE 2094-40:2016 standard.
      */
     AV_PKT_DATA_DYNAMIC_HDR10_PLUS,
+	
+	
+	AV_PKT_DATA_SHUTTER_INTERVAL,
 
     /**
      * The number of side data types.

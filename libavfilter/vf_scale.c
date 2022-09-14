@@ -25,7 +25,6 @@
 
 #include <stdio.h>
 #include <string.h>
-
 #include "avfilter.h"
 #include "formats.h"
 #include "internal.h"
@@ -40,6 +39,7 @@
 #include "libavutil/pixdesc.h"
 #include "libavutil/imgutils.h"
 #include "libswscale/swscale.h"
+
 
 static const char *const var_names[] = {
     "in_w",   "iw",
@@ -856,7 +856,6 @@ static int filter_frame(AVFilterLink *link, AVFrame *in)
     AVFilterLink *outlink = ctx->outputs[0];
     AVFrame *out;
     int ret;
-
     ret = scale_frame(link, in, &out);
     if (out)
         return ff_filter_frame(outlink, out);

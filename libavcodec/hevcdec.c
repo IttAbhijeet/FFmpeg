@@ -37,6 +37,7 @@
 #include "libavutil/pixdesc.h"
 #include "libavutil/stereo3d.h"
 #include "libavutil/timecode.h"
+#include "libavutil/shutter_interval.h"
 
 #include "bswapdsp.h"
 #include "bytestream.h"
@@ -2793,6 +2794,7 @@ static int set_side_data(HEVCContext *s)
         IS_IRAP(s) && s->no_rasl_output_flag) {
         s->sei.mastering_display.present--;
     }
+	
     if (s->sei.mastering_display.present) {
         // HEVC uses a g,b,r ordering, which we convert to a more natural r,g,b
         const int mapping[3] = {2, 0, 1};
@@ -2843,6 +2845,7 @@ static int set_side_data(HEVCContext *s)
         IS_IRAP(s) && s->no_rasl_output_flag) {
         s->sei.content_light.present--;
     }
+	
     if (s->sei.content_light.present) {
         AVContentLightMetadata *metadata =
             av_content_light_metadata_create_side_data(out);
@@ -2856,6 +2859,25 @@ static int set_side_data(HEVCContext *s)
                metadata->MaxCLL, metadata->MaxFALL);
     }
 
+	if(s->sei.shutter_interval.present){
+		AVShutterInterval *data =
+            av_shutter_interval_create_side_data(out);
+        if (!data)
+            return AVERROR(ENOMEM);
+		data->sii_time_scale 								= s->sei.shutter_interval.sii_time_scale;
+		data->fixed_shutter_interval_within_clvs_flag 		= s->sei.shutter_interval.fixed_shutter_interval_within_clvs_flag;
+		if(s->sei.shutter_interval.fixed_shutter_interval_within_clvs_flag){
+			data->sii_num_units_in_shutter_interval 			= s->sei.shutter_interval.sii_num_units_in_shutter_interval;
+		}
+		else{
+			data->sii_max_sub_layers 							= s->sei.shutter_interval.sii_max_sub_layers;
+	    
+			for(int j = 0; j < s->sei.shutter_interval.sii_max_sub_layers; j++){
+				data->sub_layer_num_units_in_shutter_interval[j] = s->sei.shutter_interval.sub_layer_num_units_in_shutter_interval[j];
+			}
+		}
+		
+	}
     if (s->sei.a53_caption.buf_ref) {
         HEVCSEIA53Caption *a53 = &s->sei.a53_caption;
 
@@ -3773,6 +3795,7 @@ static int hevc_update_thread_context(AVCodecContext *dst,
     s->sei.mastering_display    = s0->sei.mastering_display;
     s->sei.content_light        = s0->sei.content_light;
     s->sei.alternative_transfer = s0->sei.alternative_transfer;
+	s->sei.shutter_interval     = s0->sei.shutter_interval;
 
     ret = export_stream_params_from_sei(s);
     if (ret < 0)

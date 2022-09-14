@@ -374,6 +374,26 @@ static int decode_nal_sei_alternative_transfer(HEVCSEIAlternativeTransfer *s,
     return 0;
 }
 
+static int decode_nal_sei_shutter_interval_info(HEVCSEIShutterInterval *s, GetBitContext *gb)
+{
+	s->sii_time_scale = get_bits(gb, 32);
+	s->fixed_shutter_interval_within_clvs_flag = get_bits(gb, 1);
+	if(s->fixed_shutter_interval_within_clvs_flag ){
+		s->sii_num_units_in_shutter_interval = get_bits(gb, 32);
+	}
+	else{
+	s->sii_max_sub_layers = get_bits(gb, 3) + 1;
+	
+	for(int i = 0; i < s->sii_max_sub_layers; i++){
+		s->sub_layer_num_units_in_shutter_interval[i] = get_bits(gb, 32);
+	}
+	}
+	
+	s->present = 1;
+	
+	return 0;
+}
+
 static int decode_nal_sei_timecode(HEVCSEITimeCode *s, GetBitContext *gb)
 {
     s->num_clock_ts = get_bits(gb, 2);
@@ -492,6 +512,8 @@ static int decode_nal_sei_prefix(GetBitContext *gb, GetByteContext *gbyte,
         return decode_nal_sei_timecode(&s->timecode, gb);
     case SEI_TYPE_FILM_GRAIN_CHARACTERISTICS:
         return decode_film_grain_characteristics(&s->film_grain_characteristics, gb);
+	case SEI_TYPE_SHUTTER_INTERVAL_INFO:
+        return decode_nal_sei_shutter_interval_info(&s->shutter_interval, gb);
     default:
         av_log(logctx, AV_LOG_DEBUG, "Skipped PREFIX SEI %d\n", type);
         return 0;
