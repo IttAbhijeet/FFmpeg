@@ -135,7 +135,6 @@ enum {
     SEI_TYPE_ANNOTATED_REGIONS                           = 202,
     SEI_TYPE_SUBPIC_LEVEL_INFO                           = 203,
     SEI_TYPE_SAMPLE_ASPECT_RATIO_INFO                    = 204,
-	SEI_TYPE_SHUTTER_INTERVAL_INFO                       = 205,
 };
 
 #endif /* AVCODEC_SEI_H */

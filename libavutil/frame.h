@@ -209,12 +209,6 @@ enum AVFrameSideDataType {
      * volume transform - CUVA 005.1-2021.
      */
     AV_FRAME_DATA_DYNAMIC_HDR_VIVID,
-	
-	/*
-	 *Shutter Interval Informatrion.
-	 *An AVShutterInterval type
-	*/
-	AV_FRAME_DATA_SHUTTER_INTERVAL,
 };
 
 enum AVActiveFormatDescription {

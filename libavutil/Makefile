@@ -74,7 +74,6 @@ HEADERS = adler32.h                                                     \
           ripemd.h                                                      \
           samplefmt.h                                                   \
           sha.h                                                         \
-		  shutter_interval.h                                            \
           sha512.h                                                      \
           spherical.h                                                   \
           stereo3d.h                                                    \
@@ -162,7 +161,6 @@ OBJS = adler32.o                                                        \
        samplefmt.o                                                      \
        sha.o                                                            \
        sha512.o                                                         \
-	   shutter_interval.o                                               \
        slicethread.o                                                    \
        spherical.o                                                      \
        stereo3d.o                                                       \
