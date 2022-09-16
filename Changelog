@@ -12,6 +12,8 @@ version <next>:
 - WBMP (Wireless Application Protocol Bitmap) image format
 - a3dscope filter
 - bonk decoder and demuxer
+- Micronas SC-4 audio decoder
+- LAF demuxer
 
 
 version 5.1:
